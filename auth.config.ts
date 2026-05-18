@@ -4,6 +4,8 @@ export const authConfig = {
   pages: {
     signIn: '/login',
   },
+  // Override the default NextAuth.js behavior to handle authentication on the server side:
+  trustHost: true,
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
