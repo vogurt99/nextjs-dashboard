@@ -2,7 +2,6 @@ import { NextResponse, NextRequest } from 'next/server';
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { authConfig } from '@/auth.config';
-import { z } from 'zod';
 import type { User } from '@/app/lib/definitions';
 import bcrypt from 'bcrypt';
 import postgres from 'postgres';
@@ -40,17 +39,6 @@ const { handlers } = NextAuth({
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { email, password } = body;
-    
-    const parsedCredentials = z
-      .object({ email: z.string().email(), password: z.string().min(6) })
-      .safeParse({ email, password });
-
-    if (!parsedCredentials.success) {
-      return NextResponse.json({ error: 'Invalid formats' }, { status: 400 });
-    }
-
     return await handlers.POST(req);
   } catch (err) {
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
