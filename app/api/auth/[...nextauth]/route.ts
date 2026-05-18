@@ -1,12 +1,13 @@
+import { NextResponse, NextRequest } from 'next/server';
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { authConfig } from '@/auth.config';
 import type { User } from '@/app/lib/definitions';
 import bcrypt from 'bcrypt';
 import postgres from 'postgres';
-
+ 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
-
+ 
 async function getUser(email: string): Promise<User | undefined> {
   try {
     const user = await sql<User[]>`SELECT * FROM users WHERE email=${email}`;
@@ -16,7 +17,7 @@ async function getUser(email: string): Promise<User | undefined> {
   }
 }
 
-const { handlers, signIn, signOut, auth } = NextAuth({
+const { handlers } = NextAuth({
   ...authConfig,
   secret: 'DkG5voGOok+dVWVVt40aYPFkBQWlX6CGEXcRtxatZtQ=',
   providers: [
@@ -36,4 +37,12 @@ const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 });
 
-export { handlers as GET, handlers as POST, signIn, signOut, auth };
+export async function POST(req: NextRequest) {
+  try {
+    return await handlers.POST(req);
+  } catch (err) {
+    return NextResponse.json({ error: 'Server Error' }, { status: 500 });
+  }
+}
+
+export const GET = handlers.GET;
