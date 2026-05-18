@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import postgres from 'postgres';
 import { signIn } from '@/auth';
+import { AuthError } from 'next-auth';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
@@ -91,6 +92,7 @@ export async function updateInvoice(id: string, formData: FormData) {
         WHERE id = ${id}
       `;
   } catch (error) {
+    // We'll also log the error to the console for now
     console.error(error);
     return { message: 'Database Error: Failed to Update Invoice.' };
   }
@@ -109,20 +111,20 @@ export async function authenticate(
   formData: FormData,
 ) {
   try {
-    await signIn('credentials', Object.fromEntries(formData));
-  } catch (error: any) {
+    await signIn('credentials', formData);
+  } catch (error) {
     if (isRedirectError(error)) {
       throw error;
     }
 
-    const errorMessage = error?.message || '';
-    if (
-      errorMessage.includes('CredentialsSignin') || 
-      errorMessage.includes('CallbackRouteError')
-    ) {
-      return 'Invalid credentials.';
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return 'Invalid credentials.';
+        default:
+          return 'Something went wrong.';
+      }
     }
-
-    return 'Something went wrong.';
+    return 'An unexpected validation error occurred.';
   }
 }
