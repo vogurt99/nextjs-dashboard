@@ -6,7 +6,6 @@ import { redirect } from 'next/navigation';
 import postgres from 'postgres';
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
-import { isRedirectError } from 'next/dist/client/components/redirect-error';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -113,10 +112,6 @@ export async function authenticate(
   try {
     await signIn('credentials', formData);
   } catch (error) {
-    if (isRedirectError(error)) {
-      throw error;
-    }
-
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
@@ -125,6 +120,6 @@ export async function authenticate(
           return 'Something went wrong.';
       }
     }
-    return 'An unexpected validation error occurred.';
+    throw error;
   }
 }
