@@ -9,10 +9,10 @@ import {
 import { ArrowRightIcon } from '@heroicons/react/20/solid';
 import { Button } from './button';
 import { useState, useTransition } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 export default function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   
@@ -24,20 +24,19 @@ export default function LoginForm() {
     setErrorMessage(null);
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email');
-    const password = formData.get('password');
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
     startTransition(async () => {
       try {
-        const response = await fetch('/api/auth/callback/credentials', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, redirectTo: callbackUrl }),
+        const result = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
         });
 
-        if (response.ok || response.status === 302) {
-          router.refresh();
-          router.push(callbackUrl);
+        if (result?.ok) {
+          window.location.href = callbackUrl;
           return;
         }
 
