@@ -120,6 +120,12 @@ export async function authenticate(
           return 'Something went wrong.';
       }
     }
-    throw error;
+    
+    if ((error as any).message?.includes('NEXT_REDIRECT') || (error as any).digest?.includes('NEXT_REDIRECT')) {
+      throw error;
+    }
+
+    console.error('Unhandled Auth Action Failure:', error);
+    return 'Something went wrong.';
   }
 }
