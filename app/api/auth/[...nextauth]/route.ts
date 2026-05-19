@@ -44,17 +44,19 @@ const { handlers } = NextAuth({
   ],
 });
 
-// Explicit type wrapper wrappers to safely satisfy Next.js 16 production routing constraints
+// Resolve the async params completely before executing the NextAuth handler layer
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  return handlers.GET(request);
+  const syncParams = await context.params;
+  return (handlers.GET as any)(request, { params: syncParams });
 }
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  return handlers.POST(request);
+  const syncParams = await context.params;
+  return (handlers.POST as any)(request, { params: syncParams });
 }
