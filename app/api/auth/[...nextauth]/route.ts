@@ -5,6 +5,7 @@ import { z } from 'zod';
 import postgres from 'postgres';
 import type { User } from '@/app/lib/definitions';
 import bcrypt from 'bcrypt';
+import { NextRequest } from 'next/server';
 
 const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
@@ -18,7 +19,7 @@ async function getUser(email: string): Promise<User | undefined> {
   }
 }
 
-const handler = NextAuth({
+const { handlers } = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
@@ -43,4 +44,17 @@ const handler = NextAuth({
   ],
 });
 
-export { handler as GET, handler as POST };
+// Explicit type wrapper wrappers to safely satisfy Next.js 16 production routing constraints
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ nextauth: string[] }> }
+) {
+  return handlers.GET(request);
+}
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ nextauth: string[] }> }
+) {
+  return handlers.POST(request);
+}
