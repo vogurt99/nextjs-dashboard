@@ -6,15 +6,21 @@ import type { User } from '@/app/lib/definitions';
 import bcrypt from 'bcrypt';
 import postgres from 'postgres';
  
-const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
- 
 async function getUser(email: string): Promise<User | undefined> {
+  // Initialize connection inside the call scope to handle Serverless lifecycles cleanly
+  const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
+  
   try {
+    console.log('Attempting database query for email:', email);
     const user = await sql<User[]>`SELECT * FROM users WHERE email=${email}`;
+    console.log('Database response status. User found:', !!user[0]);
     return user[0];
   } catch (error) {
-    console.error('Database Error:', error);
+    console.error('CRITICAL DATABASE OPERATION FAILURE:', error);
     throw new Error('Failed to fetch user.');
+  } finally {
+    // End connection pool to avoid resource leaking on the serverless instance
+    await sql.end();
   }
 }
  
@@ -36,7 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (passwordsMatch) return user;
         }
  
-        console.log('Invalid credentials');
+        console.log('Credentials validation parsed incorrectly or match failed');
         return null;
       },
     }),
